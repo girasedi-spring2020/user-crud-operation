@@ -1,0 +1,276 @@
+<html>
+    <head>
+        <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+        <title>Login Application</title>
+        <style>
+            .hide{
+                color:blue;
+                display: none;
+            }
+
+            .hide1{
+                display: none;
+            }
+
+            p{
+                color:red;
+            }
+
+            .hidetext { -webkit-text-security: disc; /* Default */ }
+
+        </style>
+    </head>
+    <body>
+        <div class="container">
+        <div class="page-header">
+            <h1>Users</h1>      
+        </div>
+        <div class="alert alert-success alert-dismissible" id="myAlert">
+                <a href="#" class="close">&times;</a>
+                <div id="msg"></div>
+              </div>
+        <form>
+            <div class="form-group">
+                     <label>Email Address</label>
+                     <input type="text" class="form-control" onchange = "validateEmail()" id="email"/>
+                     <p id="errMsg1" class="hide1">Email ID is not valid</p>
+            </div>
+            <div class="form-group">
+            <label>Password</label>
+            <input type="password" class="form-control" onchange ="strengthPswd()" id="pswd"/>
+            <p id="errMsg2" class="hide1">Password Weak</p>
+            </div>
+        
+            <button type="submit" class="btn btn-default" id="btnSubmit">
+                    Add <span class="glyphicon glyphicon-plus"></span></button>
+            <button id="btnUpd" class="btn btn-default" disabled=true>        
+                    Update <span class="glyphicon glyphicon-pencil"></span></button>
+        </form>
+
+        
+
+            <button id="getAll" class="btn btn-info">
+                    All Users <span class="glyphicon glyphicon-list"></span></button>
+
+            <div id="btnDiv" class="hide">
+                    <table id="tbl" class="table">
+                            <thead>
+                              <tr>
+                                <th>Email Id</th>
+                                <th>Password</th>
+                              </tr>
+                            </thead>
+                            <tbody id="tbody">
+                            </tbody>
+                    </table>
+                    <button id="btnDel" class="btn btn-default" disabled=true>
+                    Delete <span class="glyphicon glyphicon-remove"></span></button>
+                    
+            </div>
+
+            </div>
+        <script>
+            $(document).ready(function() {
+                
+            
+            var clickedRowID;
+            var emailValid = false;
+            var pswdValid = false;
+            $("#myAlert").hide();
+            $(".close").click(function(){
+                //$("#myAlert").alert("close");
+                $("#myAlert").hide();
+            });
+
+            function resetFields(){
+                $("#email").val('');
+
+                $("#pswd").val('');
+                $("#btnSubmit").prop("disabled",false);
+                $("#btnUpd").prop("disabled",true);
+                $("#btnDel").prop("disabled",true);
+                getAllEntries();
+            }
+
+            function updateTextFields(){
+                //alert($("#"+clickedRowID).html().split("  ")[0].trim());
+                $("#btnSubmit").prop("disabled",true);
+                $("#email").val($("#"+clickedRowID).find("td:eq(0)").text());
+                $("#pswd").val($("#"+clickedRowID).find("td:eq(1)").text());
+                var data = {};
+            }
+
+            function validateEmail(){
+                var emailID =   document.getElementById("email").value;
+            
+                var regEx = /^[a-z0-9._]+@[a-z0-9.-]+.[a-z]{2,4}$/;
+                if((!regEx.test(emailID))){
+                    emailValid= false;
+                    $("#errMsg1").removeClass("hide1");
+                }
+                else{
+                    emailValid =  true;
+                    $("#errMsg1").addClass("hide1");
+                }
+                    
+            }
+
+            function strengthPswd(){
+                var passwd = document.getElementById("pswd").value;;
+                var regEx = /^(((?=.*[a-z])(?=.*[A-Z]))|((?=.*[a-z])(?=.*[0-9]))|((?=.*[A-Z])(?=.*[0-9])))(?=.{6,})/;
+                if((!regEx.test(passwd))){
+                    pswdValid= false;
+                    $("#errMsg2").removeClass("hide1");
+                }
+                else{
+                    pswdValid= true;
+                    $("#errMsg2").addClass("hide1");
+                }
+                
+
+
+                return true;
+            }
+
+            $("#btnUpd").click(function(e){
+                e.preventDefault();
+                var email = document.getElementById("email").value;
+                var pswd = document.getElementById("pswd").value;
+                validateEmail();
+                strengthPswd();
+                if(emailValid && pswdValid){
+                    var data = {};
+                data.email = email;
+                data.pwd = pswd;
+                data._id = clickedRowID;
+
+                $.ajax({
+                        type: 'POST',
+                        data: JSON.stringify(data),
+                        contentType: 'application/json',
+                        url: 'http://localhost:3000/user/edit',                        
+                        success: function(result) {
+                            console.log('success');
+                        }
+                        
+                    });   
+                
+                    $("#myAlert").show();
+                    $("#msg").text("Updated user successfully");
+                    resetFields();
+                }
+
+                else{
+                    alert("Enter correct value for inputs");
+                }
+
+            })
+
+
+            $("#btnDel").click(function(e){
+                e.preventDefault();
+                //alert(clickedRowID);
+                var userPswd = prompt("Enter Your Password");
+
+
+
+                var data = {};
+                data.pwd = ($("#"+clickedRowID).find("td:eq(1)").text());
+                if(userPswd == data.pwd){
+                    $.ajax({
+                    type: 'POST',
+                    data: JSON.stringify(data),
+                    contentType: 'application/json',
+                    url: 'http://localhost:3000/user/delete',                        
+                        success: function(result) {
+                            console.log('success');
+                        }
+                });
+
+                $("#myAlert").show();
+                $("#msg").text("Removed user successfully");
+                resetFields();
+                }
+
+                else{
+                    alert("Incorrect Password");
+                }
+
+            })  
+
+            $("#btnSubmit").click(function(e){
+                e.preventDefault();
+                validateEmail();
+                strengthPswd();
+                if(emailValid && pswdValid){
+                    var email = document.getElementById("email").value;
+                var pswd = document.getElementById("pswd").value;
+                var data = {};
+                data.email = email;
+                data.pwd = pswd;
+
+
+                $.ajax({
+                        type: 'POST',
+                        data: JSON.stringify(data),
+                        contentType: 'application/json',
+                        url: 'http://localhost:3000/user/create',                        
+                        success: function(result) {
+                            console.log('success');
+                        }
+                        
+                    });
+
+                   // $("#msg").toggleClass("alert-dismissible");
+                   // $("#msg").toggleClass("fade in");
+                   $("#myAlert").show();
+                   $("#msg").text("Added new user successfully");
+                    resetFields();
+
+                }
+
+                else
+                alert("Enter correct value for inputs");
+            })
+
+            $("#getAll").click(function(e){
+                e.preventDefault();
+                $("#btnDiv").toggleClass("hide");
+                resetFields();
+                //getAllEntries();
+                  //alert(dta);
+            })
+
+            function getAllEntries(){
+                
+                
+                $("#tbody").empty();
+                var dta;
+                    $.get('http://localhost:3000/user/getAll', function(data, status){
+                        $.each(data, function(i, item) {
+                        console.log(data[i].email);
+                        console.log(data[i]._id);
+                        dta = dta + data[i].email;
+                        var elem = ('<tr id="'+data[i]._id+'"><td>' + data[i].email + "</td><td class='hidetext'>" + data[i].pwd + '</td></tr>');
+                            //elem.attr("id",i);
+                        $("#tbody").append(elem);
+                        $("#"+data[i]._id).click(function(e){
+                            $("#tbody").children().removeClass("info");   
+                            clickedRowID = data[i]._id;
+                            $("#"+clickedRowID).toggleClass("info");
+                            $("#btnUpd").prop("disabled",false);
+                            $("#btnDel").prop("disabled",false);
+                            updateTextFields();
+                        })
+                        })
+                  });
+            }
+            })
+        </script>
+    </body>
+
+
+</html>
+
